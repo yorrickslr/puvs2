@@ -73,6 +73,7 @@ int main(int argc, char *argv[])
 {
     float *v, *w;                                                    // Felder
     int iter;                                                // Wiederholungen
+    int errors = 0;            // speichert Anzahl aller falschen Feldelemente
     if (argc != 2) {                                      // Benutzungshinweis
         printf ("Vector sorting\nUsage: %s <NumIter>\n", argv[0]); 
         return 0;
@@ -98,10 +99,16 @@ int main(int argc, char *argv[])
         quicksort_parallel(w, 0, NUM-1);               // parallele Sortierung
         endTime = omp_get_wtime();
         parallelTime += endTime - startTime;
+
+        for(int j = 0; j < NUM; j++) {          // falsche Elemente aufrechnen
+            if(v[j] != w[j])
+                errors++;
+        }
     }
 
-    printf("\nserial algorithm took %f seconds\n"
-        "parallel algorithm took %f seconds\n",
+    printf("\n%d errors in total\n",errors);
+    printf("\nSerial algorithm took %f seconds\n"
+        "Parallel algorithm took %f seconds\n",
         serialTime, parallelTime);
     printf("\nDone.\n");
     return 0;
