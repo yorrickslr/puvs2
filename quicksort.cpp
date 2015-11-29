@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
     v = (float *) calloc(NUM, sizeof(float));          // Speicher reservieren
     w = (float *) calloc(NUM, sizeof(float));      // Speicher für Kopie von v
 
-    float startTime, endTime, parallelTime=0.0, serialTime=0.0;
+    double startTime, endTime, parallelTime=0.0, serialTime=0.0;
     printf("Perform vector sorting %d times...\n", iter);
     for (int i = 0; i < iter; i++) {               // Wiederhole das Sortieren
         for (int j = 0; j < NUM; j++) {    // Mit Zufallszahlen initialisieren
