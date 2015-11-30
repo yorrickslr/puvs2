@@ -43,7 +43,7 @@ void quicksort(float *v, int start, int end)
 // ---------------------------------------------------------------------------
 // Parallele Version von Quicksort (Wirth) 
 
-void quicksort_parallel(float *v, int start, int end) 
+void quicksort_parallel(float *v, int start, int end, bool parallel) 
 {
     int i = start, j = end;
     float pivot;
@@ -60,14 +60,21 @@ void quicksort_parallel(float *v, int start, int end)
             j--;
         }
    } while (i <= j);
-   #pragma omp parallel sections 
-   {
-   #pragma omp section                                   //Behandle linken Teil als eigene Section [alles kleiner als Pivot]
-   if (start < j)                                        // Teile und herrsche
-       quicksort(v, start, j);                      // Linkes Segment zerlegen
-   #pragma omp section                                   //Behandle rechten Teil als eigene Section [alles größer als Pivot]
-   if (i < end)
-       quicksort(v, i, end);                       // Rechtes Segment zerlegen
+   if(parallel==true) {
+     #pragma omp parallel sections 
+     {
+        #pragma omp section                                   //Behandle linken Teil als eigene Section [alles kleiner als Pivot]
+          if (start < j)                                        // Teile und herrsche
+           quicksort_parallel(v, start, j, false);                      // Linkes Segment zerlegen
+        #pragma omp section                                   //Behandle rechten Teil als eigene Section [alles größer als Pivot]
+          if (i < end)
+           quicksort_parallel(v, i, end,false);                       // Rechtes Segment zerlegen
+     }
+   } else {
+     if (start < j)                                        // Teile und herrsche
+       quicksort_parallel(v, start, j, false);                      // Linkes Segment zerlegen
+     if (i < end)
+       quicksort_parallel(v, i, end, false);                       // Rechtes Segment zerlegen
    }
 }
 
@@ -101,7 +108,7 @@ int main(int argc, char *argv[])
         serialTime += endTime - startTime;
 
         startTime = omp_get_wtime();
-        quicksort_parallel(w, 0, NUM-1);               // parallele Sortierung
+        quicksort_parallel(w, 0, NUM-1, true);               // parallele Sortierung
         endTime = omp_get_wtime();
         parallelTime += endTime - startTime;
 
