@@ -43,7 +43,7 @@ void quicksort(float *v, int start, int end)
 // ---------------------------------------------------------------------------
 // Parallele Version von Quicksort (Wirth) 
 
-void quicksort_parallel(float *v, int start, int end) 
+void quicksort_parallel(float *v, int start, int end, bool parallel) 
 {
     int i = start, j = end;
     float pivot;
@@ -59,12 +59,21 @@ void quicksort_parallel(float *v, int start, int end)
             j--;
         }
     } while (i <= j);
-    #pragma omp parallel num_threads(2)
-    {
-        if (start < j && omp_get_thread_num()==0)
-            quicksort(v, start, j);
-        if (i < end && omp_get_thread_num()==1)
-            quicksort(v, i, end);
+    if(parallel) {
+        #pragma omp parallel num_threads(2)
+        {
+            if (start < j && omp_get_thread_num()==0) {
+                quicksort_parallel(v, start, j, 0);
+            }
+            if (i < end && omp_get_thread_num()==1) {
+                quicksort_parallel(v, i, end, 0);
+            }
+        }
+    } else {
+        if (start < j)
+                quicksort_parallel(v, start, j, 0);
+        if (i < end)
+            quicksort_parallel(v, i, end, 0);
     }
 }
 
@@ -98,7 +107,7 @@ int main(int argc, char *argv[])
         serialTime += endTime - startTime;
 
         startTime = omp_get_wtime();
-        quicksort_parallel(w, 0, NUM-1);               // parallele Sortierung
+        quicksort_parallel(w, 0, NUM-1, 1);            // parallele Sortierung
         endTime = omp_get_wtime();
         parallelTime += endTime - startTime;
 

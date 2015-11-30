@@ -61,9 +61,9 @@ void quicksort_parallel(float *v, int start, int end)
         }
    } while (i <= j);
    if (start < j)                                        // Teile und herrsche
-       quicksort(v, start, j);                      // Linkes Segment zerlegen
+       quicksort_parallel(v, start, j);                      // Linkes Segment zerlegen
    if (i < end)
-       quicksort(v, i, end);                       // Rechtes Segment zerlegen
+       quicksort_parallel(v, i, end);                       // Rechtes Segment zerlegen
 }
 
 // ---------------------------------------------------------------------------
