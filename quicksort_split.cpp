@@ -59,7 +59,7 @@ void quicksort_parallel(float *v, int start, int end)
             j--;
         }
     } while (i <= j);
-    #pragma omp parallel
+    #pragma omp parallel num_threads(2)
     {
         if (start < j && omp_get_thread_num()==0)
             quicksort(v, start, j);
