@@ -43,7 +43,7 @@ void quicksort(float *v, int start, int end)
 // ---------------------------------------------------------------------------
 // Parallele Version von Quicksort (Wirth) 
 
-void quicksort_parallel(float *v, int start, int end) 
+void quicksort_parallel(float *v, int start, int end, bool parallel) 
 {
     int i = start, j = end;
     float pivot;
@@ -61,16 +61,22 @@ void quicksort_parallel(float *v, int start, int end)
             j--;
         } 
    } while (i <= j);
+   if(parallel == true) {
    #pragma omp task 
    {
-   if (start < j)                                        // Teile und herrsche
-       quicksort(v, start, j); }                      // Linkes Segment zerlegen
+     if (start < j)                                        // Teile und herrsche
+       quicksort_parallel(v, start, j,false); }                      // Linkes Segment zerlegen
    #pragma omp task 
    {
-	   if (i < end)
-       quicksort(v, i, end);       }                // Rechtes Segment zerlegen
+	 if (i < end)
+       quicksort_parallel(v, i, end, false);       }                // Rechtes Segment zerlegen
+	      } else {
+     if (start < j)                                        // Teile und herrsche
+       quicksort_parallel(v, start, j, false);                      // Linkes Segment zerlegen
+     if (i < end)
+       quicksort_parallel(v, i, end, false);                       // Rechtes Segment zerlegen
+   }
 }
-
 // ---------------------------------------------------------------------------
 // Hauptprogramm
 
@@ -101,7 +107,7 @@ int main(int argc, char *argv[])
         serialTime += endTime - startTime;
 
         startTime = omp_get_wtime();
-        quicksort_parallel(w, 0, NUM-1);               // parallele Sortierung
+        quicksort_parallel(w, 0, NUM-1,true);               // parallele Sortierung
         endTime = omp_get_wtime();
         parallelTime += endTime - startTime;
 
@@ -118,3 +124,11 @@ int main(int argc, char *argv[])
     printf("\nDone.\n");
     return 0;
 }
+
+/*
+2.Test in main überprüft auf Fehler.
+3.Läuft ungefähr gleich schnell aber parallelisiert
+4. Zwei Tasks arbeiten gleichzeitig am oberen und unteren Teil der Liste. Wird sicher gestellt, dass nicht zuviele durch Rekursion erzeugt werden.
+
+
+*/
