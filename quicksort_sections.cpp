@@ -43,7 +43,7 @@ void quicksort(float *v, int start, int end)
 // ---------------------------------------------------------------------------
 // Parallele Version von Quicksort (Wirth) 
 
-void quicksort_parallel(float *v, int start, int end) 
+void quicksort_parallel(float *v, int start, int end, bool parallel) 
 {
     int i = start, j = end;
     float pivot;
@@ -51,26 +51,30 @@ void quicksort_parallel(float *v, int start, int end)
     pivot = v[(start + end) / 2];                         // mittleres Element
     do {
         while (v[i] < pivot)
-		#pragma omp atomic
             i++;
         while (pivot < v[j])
-		#pragma omp atomic
             j--;
         if (i <= j) {               // wenn sich beide Indizes nicht beruehren
-            swap(v, i, j);
-			#pragma omp atomic
+            swap(v, i, j);	
             i++;
             j--;
         }
    } while (i <= j);
-   #pragma omp parallel sections 
-   {
-   #pragma omp section
-   if (start < j)                                        // Teile und herrsche
-       quicksort(v, start, j);                      // Linkes Segment zerlegen
-   #pragma omp section
-   if (i < end)
-       quicksort(v, i, end);                       // Rechtes Segment zerlegen
+   if(parallel==true) {
+     #pragma omp parallel sections 
+     {
+        #pragma omp section                                   //Behandle linken Teil als eigene Section [alles kleiner als Pivot]
+          if (start < j)                                        // Teile und herrsche
+           quicksort_parallel(v, start, j, false);                      // Linkes Segment zerlegen
+        #pragma omp section                                   //Behandle rechten Teil als eigene Section [alles größer als Pivot]
+          if (i < end)
+           quicksort_parallel(v, i, end,false);                       // Rechtes Segment zerlegen
+     }
+   } else {
+     if (start < j)                                        // Teile und herrsche
+       quicksort_parallel(v, start, j, false);                      // Linkes Segment zerlegen
+     if (i < end)
+       quicksort_parallel(v, i, end, false);                       // Rechtes Segment zerlegen
    }
 }
 
@@ -104,13 +108,13 @@ int main(int argc, char *argv[])
         serialTime += endTime - startTime;
 
         startTime = omp_get_wtime();
-        quicksort_parallel(w, 0, NUM-1);               // parallele Sortierung
+        quicksort_parallel(w, 0, NUM-1, true);               // parallele Sortierung
         endTime = omp_get_wtime();
         parallelTime += endTime - startTime;
 
         for(int j = 0; j < NUM; j++) {          // falsche Elemente aufrechnen
-            if(v[j] != w[j])
-                errors++;
+            if(v[j] != w[j])                    //Testfunktion vergleicht mit existierendem
+                errors++;                       //funktionierenden seriellen Quicksort
         }
     }
 
@@ -121,3 +125,22 @@ int main(int argc, char *argv[])
     printf("\nDone.\n");
     return 0;
 }
+
+
+
+//2. Testfunktion ist in der main integriert und verlgleicht zum Test mit dem seriellen Algorithmus die Werte.
+//3. Nach mehrfachen Versuchen zeigt sich, dass diese Variante ungefähr 7-8% schneller ist als der serielle Algorithmus
+    /*C:\Uni\puvs2>quicktest_sections 2000
+    Perform vector sorting 2000 times...
+
+    0 errors in total
+
+    Serial algorithm took 8.530999 seconds
+    Parallel algorithm took 7.898999 seconds
+
+    Done.
+    */
+/*4. Es wird beschleunigt indem immer der jeweilige obere Teil der Liste sowie der untere Teil parallel in zwei Sections 
+   bearbeitet werden. In ihnen wird nun rekusiv mehrmals aufgerufen, was die Geschwindigkeit ab einer bereits geringen  
+   Argumentgröße erhöht.
+*/
